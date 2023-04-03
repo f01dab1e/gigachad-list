@@ -20,6 +20,10 @@ pub struct Node<T> {
 }
 
 impl<T> List<T> {
+    pub fn peek<'a>(&self, arena: &'a Arena<T>) -> Option<&'a T> {
+        (self.node != ListNodePtr::INVALID).then(|| &arena.data(self.node).head)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.node == ListNodePtr::INVALID
     }
@@ -36,9 +40,9 @@ impl<T> List<T> {
             return None;
         }
 
-        let cell = arena.data(self.node);
-        self.node = cell.tail;
-        Some(&cell.head)
+        let node = arena.data(self.node);
+        self.node = node.tail;
+        Some(&node.head)
     }
 
     pub fn iter(mut self, arena: &Arena<T>) -> impl Iterator<Item = &T> {
@@ -53,7 +57,7 @@ impl<T> Clone for List<T> {
 }
 impl<T> Copy for List<T> {}
 
-impl<T: Default> Default for List<T> {
+impl<T> Default for List<T> {
     fn default() -> Self {
         Self {
             node: ListNodePtr::INVALID,
@@ -143,13 +147,18 @@ mod test {
 
         // Check empty list behaves right
         assert!(list.is_empty());
+        assert_eq!(list.peek(&arena), None);
         assert_eq!(list.pop_front(&arena), None);
 
-        
         // Populate list
         list.push_front(&mut arena, 1);
+        assert_eq!(list.peek(&arena), Some(&1));
+
         list.push_front(&mut arena, 2);
+        assert_eq!(list.peek(&arena), Some(&2));
+
         list.push_front(&mut arena, 3);
+        assert_eq!(list.peek(&arena), Some(&3));
 
         assert_eq!(list.iter(&arena).copied().collect::<Vec<_>>(), &[3, 2, 1]);
 
